@@ -124,8 +124,8 @@ deploy_bot() {
                             clear 2>/dev/null
                             echo "========================================"
                             echo "✓ SUCCESS: Connected to CosmicNetwork!"
-                            echo "✓ Bot running from: $p"
-                            echo "✓ Log file: $p/cosmicbot.log"
+                            #echo "✓ Bot running from: $p"
+                            #echo "✓ Log file: $p/cosmicbot.log"
                             echo "✓ Process ID: $(pgrep -f "CosmicBot.py")"
                             echo "========================================"
                             return 0
